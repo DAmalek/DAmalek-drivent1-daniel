@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import httpStatus from 'http-status';
 import { AuthenticatedRequest } from '@/middlewares';
-import enrollmentsService from '@/services/enrollments-service';
+import enrollmentsService, { CreateOrUpdateEnrollmentWithAddress } from '@/services/enrollments-service';
 
 export async function getEnrollmentByUser(req: AuthenticatedRequest, res: Response) {
   const { userId } = req;
@@ -29,19 +29,14 @@ export async function postCreateOrUpdateEnrollment(req: AuthenticatedRequest, re
 }
 
 export async function getAddressFromCEP(req: AuthenticatedRequest, res: Response) {
-  const { cep } = req.query;
-
-  if (Number.isNaN(cep)) {
-    return res.send(httpStatus.BAD_REQUEST);
-  }
+  const cep = req.query.cep as string;
 
   try {
-    const address = await enrollmentsService.getAddressFromCEP(cep as string);
-
+    const address = await enrollmentsService.getAddressFromCEP(cep);
     res.status(httpStatus.OK).send(address);
   } catch (error) {
-    if (error.name === 'RequestError') {
-      return res.sendStatus(error.status);
+    if (error.name === 'NotFoundError') {
+      return res.sendStatus(httpStatus.NO_CONTENT);
     }
   }
 }
